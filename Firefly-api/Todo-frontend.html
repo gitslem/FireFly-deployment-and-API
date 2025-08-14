@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FireFly ToDo List</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, button { margin: 5px; padding: 8px; }
+    .task-box { border: 1px solid #ccc; padding: 10px; margin-top: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <h2>🔥 FireFly ToDo List</h2>
+
+  <input type="text" id="taskInput" placeholder="Enter new task" />
+  <button onclick="createTask()">Create Task</button>
+
+  <h3>🔍 Get Task by ID</h3>
+  <input type="number" id="taskIdInput" placeholder="Task ID" />
+  <button onclick="getTask()">Get Task</button>
+  <button onclick="completeTask()">✅ Complete Task</button>
+
+  <div id="taskOutput" class="task-box" style="display:none;"></div>
+
+  <script>
+    const baseUrl = "http://localhost:5000/api/v1/namespaces/default/apis/simple-todo";
+
+    async function createTask() {
+      const content = document.getElementById("taskInput").value.trim();
+      if (!content) return alert("Please enter a task.");
+
+      const body = {
+        input: { _content: content }
+      };
+
+      const res = await fetch(`${baseUrl}/invoke/createTask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      console.log("Create task result:", result);
+
+      setTimeout(() => {
+        getLatestTask(); // refresh UI
+      }, 2000);
+    }
+
+    async function getLatestTask() {
+      const count = await getTaskCount();
+      if (count > 0) {
+        getTaskById(count);
+      }
+    }
+
+    async function getTaskCount() {
+      const res = await fetch(`${baseUrl}/query/taskCount`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+
+      const data = await res.json();
+      return parseInt(data.output || 0);
+    }
+
+    async function getTask() {
+      const id = parseInt(document.getElementById("taskIdInput").value);
+      if (!id) return alert("Enter a valid task ID");
+      getTaskById(id);
+    }
+
+    async function getTaskById(id) {
+      const body = { input: { _id: id } };
+      const res = await fetch(`${baseUrl}/query/getTask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      console.log(data);
+
+      if (!data.output && data.output !== 0) {
+        showOutput("❌ Task not found.");
+      } else {
+        showOutput(`📝 <b>ID:</b> ${data.output}<br/><b>Content:</b> ${data.output1}<br/><b>Completed:</b> ${data.output2}`);
+      }
+    }
+
+    async function completeTask() {
+      const id = parseInt(document.getElementById("taskIdInput").value);
+      if (!id) return alert("Enter a valid task ID");
+
+      const body = { input: { _id: id } };
+
+      const res = await fetch(`${baseUrl}/invoke/toggleCompleted`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      console.log("Toggle complete result:", result);
+
+      setTimeout(() => {
+        getTaskById(id); // Refresh the task to see updated status
+      }, 2000);
+    }
+
+    function showOutput(html) {
+      const box = document.getElementById("taskOutput");
+      box.innerHTML = html;
+      box.style.display = "block";
+    }
+  </script>
+
+</body>
+</html>
