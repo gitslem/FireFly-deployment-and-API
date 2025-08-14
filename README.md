@@ -1,4 +1,4 @@
-# FireFly Assignment 2 - Deliverables
+# FireFly 
 
 ## Files Included
 - `Todo.sol`: Ethereum smart contract for the Todo app.
